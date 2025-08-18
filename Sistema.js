@@ -74,7 +74,7 @@ class Sistema {
         );
         this.reservas.push(reserva);
 
-        // diminui quarto disponível 
+        // Diminui quartos disponíveis 
         quarto.quantidade -= 1; 
         return reserva;
     }
@@ -84,7 +84,7 @@ class Sistema {
         if (reserva && reserva.status !== "cancelada") {
             reserva.status = "cancelada";
 
-            // devolve o quarto
+            // Devolve quarto em uso
             const quarto = this.quartos.find(q => q.id === reserva.idQuarto);
             if (quarto) quarto.quantidade += 1;
 
@@ -104,18 +104,38 @@ class Sistema {
 
     // Funções de listagem
     listarQuartos() {
+        if (this.quartos.length === 0) {
+            console.log("Nenhum quarto cadastrado.");
+            return [];
+        }
+        
         return this.quartos.map(q => q.verDados());
     }
 
     listarClientes() {
+        if (this.clientes.length === 0) {
+            console.log("Nenhum cliente cadastrado.");
+            return [];
+        }
+        
         return this.clientes.map(c => c.meusDados());
     }
-
+    
     listarReservas() {
+        if (this.reservas.length === 0) {
+            console.log("Nenhuma reserva cadastrada.");
+            return [];
+        }
+        
         return this.reservas.map(r => r.verDados());
     }
 
     listarReservasCliente(idCliente) {
+        if (this.reservas.length === 0) {
+            console.log("Nenhuma reserva cadastrada.");
+            return [];
+        }
+        
         return this.reservas.filter(r => r.idCliente === idCliente).map(r => r.verDados());
     }
 }

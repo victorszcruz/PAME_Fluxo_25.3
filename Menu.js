@@ -3,19 +3,15 @@ const Sistema = require("./Sistema");
 
 const sistema = new Sistema();
 
-// Criando funcionário inicial para teste
-sistema.cadastrarFuncionario("Admin", "00011122233", "admin@fluxo.com", "1234");
-
-// Criando alguns quartos iniciais para teste
-sistema.adicionarQuarto("Suite Luxo", "Quarto com vista para o mar", 2, 500, 3);
-sistema.adicionarQuarto("Econômico", "Quarto simples e confortável", 1, 200, 5);
+// Criando funcionário inicial como administrador
+sistema.cadastrarFuncionario("Admin", "0", "admin", "1234");
 
 // Função auxiliar
 function esperarEnter(){
     prompt("\n Pressione Enter para voltar ao menu...");
 }
 
-// Menu para Cliente e Funcionário
+// Menus para cliente e funcionário
 function menuCliente(cliente) {
     let opcao = "";
     while (opcao !== "6") {
@@ -96,10 +92,24 @@ function menuFuncionario(func) {
                 esperarEnter();
                 break;
             case "5":
-                const idRes = parseInt(prompt("ID da reserva: "));
-                const status = prompt("Novo status: ");
-                console.log(sistema.mudarStatusReserva(idRes, status) ? "Status alterado!" : "Erro.");
+                if (sistema.reservas.length === 0) {
+                    console.log("Nenhuma reserva cadastrada.");
+                    esperarEnter();
+                    break;
+                } 
+                else {
+                    const idRes = parseInt(prompt("ID da reserva: "));
+                    const validadorReserva = sistema.reservas.find(r => r.id === idRes);
+                    if (!validadorReserva) {
+                        console.log("Reserva não encontrada.");
+                        esperarEnter();
+                        break;
+                    }
+                    const status = prompt("Novo status: ");
+                    console.log(sistema.mudarStatusReserva(idRes, status) ? "Status alterado!" : "Erro.");
+                    esperarEnter();
                 break;
+                }
             case "6":
                 console.log("\n");
                 const nome = prompt("Nome do quarto: ");
