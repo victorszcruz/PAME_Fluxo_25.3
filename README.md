@@ -4,3 +4,4 @@ Não tive tempo de finalizar algumas coisas que ainda serão inclusas no dia da 
 - Alterar dados de um usuario ou quarto ja criados
 - Possibilidade de excluir quarto criado
 
+;-;
