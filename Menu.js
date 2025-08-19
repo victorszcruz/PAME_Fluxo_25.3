@@ -3,10 +3,10 @@ const Sistema = require("./Sistema");
 
 const sistema = new Sistema();
 
-// Criando funcionário inicial como administrador
+// Cria um funcionário inicial (administrador)
 sistema.cadastrarFuncionario("Admin", "0", "admin", "1234");
 
-// Função auxiliar
+// Funções auxiliares
 function esperarEnter(){
     prompt("\n Pressione Enter para voltar ao menu...");
 }
@@ -31,7 +31,10 @@ function menuCliente(cliente) {
                 esperarEnter();
                 break;
             case "2":
-                sistema.listarQuartos().forEach(q => console.log(q));
+                const quartos = sistema.listarQuartos();
+                if (quartos.length > 0) {
+                    quartos.forEach(q => console.log(q.verDados()));
+            }
                 esperarEnter();
                 break;
             case "3":
@@ -46,7 +49,11 @@ function menuCliente(cliente) {
                 console.log(sistema.cancelarReserva(idResCancel) ? "Reserva cancelada!" : "Erro.");
                 break;
             case "5":
-                sistema.listarReservasCliente(cliente.id).forEach(r => console.log(r));
+                const minhasReservas = sistema.listarReservasCliente(cliente.id);
+                if (minhasReservas.length > 0) {
+                    console.log("\n==== MINHAS RESERVAS ===");
+                    minhasReservas.forEach(r => console.log(r.verDados()));
+                }
                 esperarEnter();
                 break;
             case "6":
@@ -80,15 +87,24 @@ function menuFuncionario(func) {
                 esperarEnter();
                 break;
             case "2":
-                sistema.listarReservas().forEach(r => console.log(r));
+                const reservas = sistema.listarReservas();
+                if (reservas.length > 0) {
+                    reservas.forEach(r => console.log(r.verDados()));
+                }
                 esperarEnter();
                 break;
             case "3":
-                sistema.listarQuartos().forEach(q => console.log(q));
+                const quartos = sistema.listarQuartos();
+                if (quartos.length > 0) {
+                    quartos.forEach(q => console.log(q.verDados()));
+    }
                 esperarEnter();
                 break;
             case "4":
-                sistema.listarClientes().forEach(c => console.log(c));
+                const clientes = sistema.listarClientes();
+                if (clientes.length > 0) {
+                    clientes.forEach(c => console.log(c.meusDados()));
+                }
                 esperarEnter();
                 break;
             case "5":
@@ -98,16 +114,35 @@ function menuFuncionario(func) {
                     break;
                 } 
                 else {
-                    const idRes = parseInt(prompt("ID da reserva: "));
+                    const idRes = parseInt(prompt("ID da reserva a ser alterada: "));
                     const validadorReserva = sistema.reservas.find(r => r.id === idRes);
                     if (!validadorReserva) {
                         console.log("Reserva não encontrada.");
                         esperarEnter();
                         break;
                     }
-                    const status = prompt("Novo status: ");
-                    console.log(sistema.mudarStatusReserva(idRes, status) ? "Status alterado!" : "Erro.");
-                    esperarEnter();
+                    console.log("\nEscolha o novo status da reserva:");
+                const statusDisponiveis = require('./Reserva').STATUS;
+                statusDisponiveis.forEach((status, index) => {console.log(`${index + 1}. ${status}`);});
+                
+                let novoStatusEscolhido = "";
+                while (true) {
+                    const escolha = parseInt(prompt("Opção: "));
+                    if (!isNaN(escolha) && escolha > 0 && escolha <= statusDisponiveis.length) {
+                        novoStatusEscolhido = statusDisponiveis[escolha - 1];
+                    break;
+                    }
+                    console.log("Opção inválida. Tente novamente.");
+                }
+    
+    
+                if (sistema.mudarStatusReserva(idRes, novoStatusEscolhido)) {
+                console.log("Status da reserva alterado com sucesso!");
+                } 
+                else {
+                    console.log("Não foi possível alterar o status da reserva.");
+                }    
+                esperarEnter();
                 break;
                 }
             case "6":
@@ -196,3 +231,6 @@ function menuInicial() {
 }
 
 menuInicial();
+
+// Menu
+// Codigo que sera executado para iniciar o sistema

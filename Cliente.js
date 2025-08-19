@@ -4,7 +4,7 @@ class Cliente extends Usuario {
 	constructor(id, nome, cpf, email, senha, nascimento) {
 		super(id, nome, cpf, email, senha);
 		this.nascimento = nascimento;
-        this.reservas = [];
+        this.reservas = []; // Lista de reservas que o cliente fez
 	}
 
 	meusDados() {
@@ -13,3 +13,6 @@ class Cliente extends Usuario {
 }
 
 module.exports = Cliente;
+
+// Classe Cliente
+// Extende a classe Usuario e adiciona o atributo nascimento e reservas

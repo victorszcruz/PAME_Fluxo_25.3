@@ -21,49 +21,69 @@ class Sistema {
     }
 
     // Cadastros
+    
+    // Cadastro do cliente
+    // Realizado no menu inicial
     cadastrarCliente(nome, cpf, email, senha, nascimento) {
         const emailPadrao = String(email).trim().toLowerCase();
         const cliente = new Cliente(this.gerarId("cliente"), nome, cpf, emailPadrao, senha, nascimento);
+        
         this.clientes.push(cliente);
+        
         return cliente;
     }
 
+    // Cadastro do funcionário
+    // Realizado no menu de funcionários
     cadastrarFuncionario(nome, cpf, email, senha) {
         const emailPadrao = String(email).trim().toLowerCase();
         const funcionario = new Funcionario(this.gerarId("funcionario"), nome, cpf, emailPadrao, senha);
+        
         this.funcionarios.push(funcionario);
+        
         return funcionario;
     }
 
+    // Cadastro do quarto
+    // Realizado no menu de funcionários
     adicionarQuarto(nome, descricao, camas, preco, quantidade) {
         const quarto = new Quarto(nome, descricao, camas, preco, quantidade);
+        
         quarto.id = this.gerarId("quarto");
         this.quartos.push(quarto);
+        
         return quarto;
     }
 
     // Login e Logout
     login(email, senha) {
-        const emailPadrao = String(email).trim().toLowerCase();
+        const emailPadrao = String(email).trim().toLowerCase(); // Padroniza o email para letras minúsculas
         const usuario = [...this.clientes, ...this.funcionarios].find(
-            u => u.email === emailPadrao && u.senha === senha
-        );
+            u => u.email === emailPadrao && u.senha === senha); 
+            // Cria uma array de usuarios (clientes + funcionários)
+            // Verifica se o email e senha correspondem a algum usuário cadastrado
+        
         if (usuario) {
             this.usuarioLogado = usuario;
             return true;
         }
+        
         return false;
     }
 
     logout() {
-        this.usuarioLogado = null;
+        this.usuarioLogado = null; // Limpa o usuário logado
     }
 
-    // Reservas
+    // Métodos para as reservas
+    // Criar reserva
     criarReserva(idCliente, idQuarto, dataEntrada, dataSaida) {
         const quarto = this.quartos.find(q => q.id === idQuarto);
-        if (!quarto || quarto.quantidade <= 0) return null;
-
+        
+        if (!quarto || quarto.quantidade <= 0){ // Verifica se o quarto existe e se há disponibilidade 
+            return null;
+        }
+        
         const reserva = new Reserva(
             this.gerarId("reserva"),
             idCliente,
@@ -72,34 +92,67 @@ class Sistema {
             dataSaida,
             "pendente"
         );
-        this.reservas.push(reserva);
-
-        // Diminui quartos disponíveis 
-        quarto.quantidade -= 1; 
+        
+        this.reservas.push(reserva); 
+        quarto.quantidade -= 1; // Diminui quartos disponíveis
         return reserva;
     }
 
+    // Cancelar reserva
     cancelarReserva(idReserva) {
         const reserva = this.reservas.find(r => r.id === idReserva);
-        if (reserva && reserva.status !== "cancelada") {
+        if (reserva && reserva.status !== "cancelada") { // Verifica se a reserva existe e se foi cancelada
             reserva.status = "cancelada";
 
-            // Devolve quarto em uso
             const quarto = this.quartos.find(q => q.id === reserva.idQuarto);
-            if (quarto) quarto.quantidade += 1;
+            if (quarto) quarto.quantidade += 1; // Devolve quarto em uso
 
             return true;
         }
+        
         return false;
     }
 
+    // Mudar status da reserva
+    // Realizada no menu de funcionários
     mudarStatusReserva(idReserva, novoStatus) {
+        if (!Reserva.STATUS.includes(novoStatus)) { // Garante que o status será válido
+            console.log("Esse status não é válido.");
+            return false;
+        }
         const reserva = this.reservas.find(r => r.id === idReserva);
         if (reserva) {
-            reserva.status = novoStatus;
+            const statusAntigo = reserva.status; // Armazena o status da reserva antes da mudança
+
+        if (statusAntigo === novoStatus) {
             return true;
         }
-        return false;
+
+        // Lógica para gerenciamento da disponibilidade dos quartos
+        const statusQuartoLivre = ["realizada","cancelada"];
+        const quarto = this.quartos.find(q => q.id === reserva.idQuarto);
+        if (quarto) {
+            const eraInativo = statusQuartoLivre.includes(statusAntigo);
+            const agoraInativo = statusQuartoLivre.includes(novoStatus);
+            
+            if (eraInativo && !agoraInativo) { // Pelos status, verifica que o quarto estará ativo
+                if (quarto.quantidade > 0) { // Verifica se há quartos disponíveis para descrementar
+                    quarto.quantidade -= 1;
+                } 
+                else {
+                    console.log("Não há mais quartos disponíveis.");
+                    return false;
+                }
+            }
+            else if (!eraInativo && agoraInativo) { // Pelos status, verifica que o quarto estará inativo
+                quarto.quantidade += 1;
+            }
+        }
+        
+        reserva.status = novoStatus;
+        return true;
+    }
+    return false;
     }
 
     // Funções de listagem
@@ -109,7 +162,7 @@ class Sistema {
             return [];
         }
         
-        return this.quartos.map(q => q.verDados());
+        return this.quartos;
     }
 
     listarClientes() {
@@ -118,7 +171,7 @@ class Sistema {
             return [];
         }
         
-        return this.clientes.map(c => c.meusDados());
+        return this.clientes;
     }
     
     listarReservas() {
@@ -127,17 +180,22 @@ class Sistema {
             return [];
         }
         
-        return this.reservas.map(r => r.verDados());
+        return this.reservas;
     }
 
     listarReservasCliente(idCliente) {
-        if (this.reservas.length === 0) {
-            console.log("Nenhuma reserva cadastrada.");
-            return [];
+        const reservasCliente = this.reservas.filter(r => r.idCliente === idCliente); // Filtro
+        
+        if (reservasCliente.length === 0) {
+            console.log("Você não possui nenhuma reserva cadastrada.");
         }
         
-        return this.reservas.filter(r => r.idCliente === idCliente).map(r => r.verDados());
+        return reservasCliente;
     }
+
 }
 
 module.exports = Sistema;
+
+// Classe Sistema
+// Gerencia os métodos que serão utilizados no menu

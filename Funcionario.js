@@ -7,3 +7,6 @@ class Funcionario extends Usuario {
 }
 
 module.exports = Funcionario;
+
+// Classe Funcionario
+// Extende a classe Usuario e não adiciona novos atributos, mas pode será usado para funcionalidades específicas de funcionários no sistema
