@@ -1,6 +1,7 @@
 class Quarto {
     constructor(nome, descricao, camas, preco, quantidade) {
-        //ID de quarto será gerado automaticamente dentro do Sistema
+        
+        this.id = null; // O ID será atribuído pela classe Sistema
         this.nome = nome;
         this.descricao = descricao;
         this.camas = camas;
@@ -9,7 +10,7 @@ class Quarto {
     }
 
     verDados() {
-        return `\n Quarto: ${this.nome} | ${this.descricao} | Camas: ${this.camas} | Preço: R$${this.preco}/noite | Disponíveis: ${this.quantidade}`;
+        return `\n ID: ${this.id} | Quarto: ${this.nome} | ${this.descricao} | Camas: ${this.camas} | Preço: R$${this.preco}/noite | Disponíveis: ${this.quantidade}`;
     }
 }
 

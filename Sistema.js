@@ -14,17 +14,36 @@ class Sistema {
         this.nextIds = { cliente: 1, funcionario: 1, quarto: 1, reserva: 1 };
     }
 
+    // Funções de Validação
+    validarEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(String(email).toLowerCase());
+    }
+
+    validarCPF(cpf) {
+        cpf = String(cpf).replace(/[^\d]+/g, '');
+        if (cpf.length !== 11 || !!cpf.match(/(\d)\1{10}/)) return false;
+        return true;
+    }
+
     // Funções auxiliares
-    // Gerar ID único para cada tipo de usuário
     gerarId(tipo) {
         return this.nextIds[tipo]++;
     }
 
     // Cadastros
     
-    // Cadastro do cliente
-    // Realizado no menu inicial
+    // Cadastro de Cliente e Funcionário
     cadastrarCliente(nome, cpf, email, senha, nascimento) {
+        if (!this.validarCPF(cpf)) {
+            console.log("\nCPF inválido.");
+            return null;
+        }
+        if (!this.validarEmail(email)) {
+            console.log("\nEmail inválido.");
+            return null;
+        }
+
         const emailPadrao = String(email).trim().toLowerCase();
         const cliente = new Cliente(this.gerarId("cliente"), nome, cpf, emailPadrao, senha, nascimento);
         
@@ -33,9 +52,15 @@ class Sistema {
         return cliente;
     }
 
-    // Cadastro do funcionário
-    // Realizado no menu de funcionários
     cadastrarFuncionario(nome, cpf, email, senha) {
+        if (!this.validarCPF(cpf)) {
+            console.log("\nCPF inválido.");
+            return null;
+        }
+        if (!this.validarEmail(email)) {
+            console.log("\nEmail inválido.");
+            return null;
+        }
         const emailPadrao = String(email).trim().toLowerCase();
         const funcionario = new Funcionario(this.gerarId("funcionario"), nome, cpf, emailPadrao, senha);
         
@@ -44,9 +69,12 @@ class Sistema {
         return funcionario;
     }
 
-    // Cadastro do quarto
-    // Realizado no menu de funcionários
+    // Cadastro de Quarto
     adicionarQuarto(nome, descricao, camas, preco, quantidade) {
+        if (isNaN(camas) || isNaN(preco) || isNaN(quantidade) || camas <= 0 || preco <= 0 || quantidade < 0) {
+            console.log("\nCamas e preço devem ser números maiores que zero. Quantidade deve ser maior ou igual a zero.");
+            return null;
+        }
         const quarto = new Quarto(nome, descricao, camas, preco, quantidade);
         
         quarto.id = this.gerarId("quarto");
@@ -54,14 +82,12 @@ class Sistema {
         
         return quarto;
     }
-
+    
     // Login e Logout
     login(email, senha) {
-        const emailPadrao = String(email).trim().toLowerCase(); // Padroniza o email para letras minúsculas
+        const emailPadrao = String(email).trim().toLowerCase();
         const usuario = [...this.clientes, ...this.funcionarios].find(
-            u => u.email === emailPadrao && u.senha === senha); 
-            // Cria uma array de usuarios (clientes + funcionários)
-            // Verifica se o email e senha correspondem a algum usuário cadastrado
+            u => u.email === emailPadrao && u.senha === senha);
         
         if (usuario) {
             this.usuarioLogado = usuario;
@@ -72,15 +98,41 @@ class Sistema {
     }
 
     logout() {
-        this.usuarioLogado = null; // Limpa o usuário logado
+        this.usuarioLogado = null;
     }
 
     // Métodos para as reservas
-    // Criar reserva
-    criarReserva(idCliente, idQuarto, dataEntrada, dataSaida) {
+    verificarDisponibilidade(idQuarto, dataEntrada, dataSaida) {
         const quarto = this.quartos.find(q => q.id === idQuarto);
-        
-        if (!quarto || quarto.quantidade <= 0){ // Verifica se o quarto existe e se há disponibilidade 
+        if (!quarto) {
+            console.log("\nQuarto não cadastrado.");
+            return false;
+        }
+
+        const entrada = new Date(dataEntrada);
+        const saida = new Date(dataSaida);
+
+        if (entrada >= saida) {
+            console.log("\nA data de saída deve ser maior que a data de entrada.");
+            return false;
+        }
+
+        const reservasParaQuarto = this.reservas.filter(r => r.idQuarto === idQuarto && r.status !== "cancelada" && r.status !== "realizada");
+
+        let quartosOcupados = 0;
+        for (const reserva of reservasParaQuarto) {
+            const reservaEntrada = new Date(reserva.dataEntrada);
+            const reservaSaida = new Date(reserva.dataSaida);
+            if (entrada < reservaSaida && saida > reservaEntrada) {
+                quartosOcupados++;
+            }
+        }
+
+        return quartosOcupados < quarto.quantidade;
+    }
+
+    criarReserva(idCliente, idQuarto, dataEntrada, dataSaida) {
+        if (!this.verificarDisponibilidade(idQuarto, dataEntrada, dataSaida)) {
             return null;
         }
         
@@ -93,72 +145,90 @@ class Sistema {
             "pendente"
         );
         
-        this.reservas.push(reserva); 
-        quarto.quantidade -= 1; // Diminui quartos disponíveis
+        this.reservas.push(reserva);
         return reserva;
     }
 
-    // Cancelar reserva
+
     cancelarReserva(idReserva) {
         const reserva = this.reservas.find(r => r.id === idReserva);
-        if (reserva && reserva.status !== "cancelada") { // Verifica se a reserva existe e se foi cancelada
+        if (reserva && reserva.status !== "cancelada") {
             reserva.status = "cancelada";
-
-            const quarto = this.quartos.find(q => q.id === reserva.idQuarto);
-            if (quarto) quarto.quantidade += 1; // Devolve quarto em uso
-
             return true;
         }
         
         return false;
     }
 
-    // Mudar status da reserva
-    // Realizada no menu de funcionários
     mudarStatusReserva(idReserva, novoStatus) {
-        if (!Reserva.STATUS.includes(novoStatus)) { // Garante que o status será válido
-            console.log("Esse status não é válido.");
+        if (this.reservas.length === 0) {
+            console.log("\nNenhuma reserva cadastrada.");
+            return false;
+        }
+        if (!Reserva.STATUS.includes(novoStatus)) {
+            console.log("\nEsse status não é válido.");
             return false;
         }
         const reserva = this.reservas.find(r => r.id === idReserva);
-        if (reserva) {
-            const statusAntigo = reserva.status; // Armazena o status da reserva antes da mudança
-
-        if (statusAntigo === novoStatus) {
-            return true;
+        if (!reserva) {
+            console.log("\nReserva não encontrada.");
+            return false;
         }
-
-        // Lógica para gerenciamento da disponibilidade dos quartos
-        const statusQuartoLivre = ["realizada","cancelada"];
-        const quarto = this.quartos.find(q => q.id === reserva.idQuarto);
-        if (quarto) {
-            const eraInativo = statusQuartoLivre.includes(statusAntigo);
-            const agoraInativo = statusQuartoLivre.includes(novoStatus);
-            
-            if (eraInativo && !agoraInativo) { // Pelos status, verifica que o quarto estará ativo
-                if (quarto.quantidade > 0) { // Verifica se há quartos disponíveis para descrementar
-                    quarto.quantidade -= 1;
-                } 
-                else {
-                    console.log("Não há mais quartos disponíveis.");
-                    return false;
-                }
-            }
-            else if (!eraInativo && agoraInativo) { // Pelos status, verifica que o quarto estará inativo
-                quarto.quantidade += 1;
-            }
-        }
-        
         reserva.status = novoStatus;
         return true;
     }
-    return false;
+
+    // Alterar e Excluir Dados
+    alterarDadosUsuarioLogado(dados) {
+        const { novoNome, novoCpf, novoEmail, novaSenha, novoNascimento } = dados;
+        if (!this.usuarioLogado) {
+            return false;
+        }
+        if (novoCpf && !this.validarCPF(novoCpf)) {
+            console.log("\nCPF inválido. Dados não foram alterados.");
+            return false;
+        }
+        if (novoEmail && !this.validarEmail(novoEmail)) {
+            console.log("\nEmail inválido. Dados não foram alterados.");
+            return false;
+        }
+
+        // Verifica se o usuário é um cliente para alterar o nascimento
+        if (this.usuarioLogado instanceof Cliente) {
+            this.usuarioLogado.alterarDados(novoNome, novoCpf, novoEmail, novaSenha, novoNascimento);
+        } else {
+            this.usuarioLogado.alterarDados(novoNome, novoCpf, novoEmail, novaSenha);
+        }
+        return true;
+    }
+
+    alterarDadosQuarto(idQuarto, novoNome, novaDesc, novasCamas, novoPreco, novaQtd) {
+        const quarto = this.quartos.find(q => q.id === idQuarto);
+        if (quarto) {
+            if (novoNome) quarto.nome = novoNome;
+            if (novaDesc) quarto.descricao = novaDesc;
+            if (novasCamas && (!isNaN(novasCamas) && novasCamas > 0)) quarto.camas = novasCamas;
+            if (novoPreco && (!isNaN(novoPreco) && novoPreco > 0)) quarto.preco = novoPreco;
+            if (novaQtd && (!isNaN(novaQtd) && novaQtd >= 0)) quarto.quantidade = novaQtd;
+            return true;
+        }
+        return false;
+    }
+
+    excluirQuarto(idQuarto) {
+        const index = this.quartos.findIndex(q => q.id === idQuarto);
+        if (index !== -1) {
+            this.quartos.splice(index, 1);
+            return true;
+        }
+        console.log("\nQuarto não encontrado.");
+        return false;
     }
 
     // Funções de listagem
     listarQuartos() {
         if (this.quartos.length === 0) {
-            console.log("Nenhum quarto cadastrado.");
+            console.log("\nNenhum quarto cadastrado.");
             return [];
         }
         
@@ -167,7 +237,7 @@ class Sistema {
 
     listarClientes() {
         if (this.clientes.length === 0) {
-            console.log("Nenhum cliente cadastrado.");
+            console.log("\nNenhum cliente cadastrado.");
             return [];
         }
         
@@ -176,7 +246,7 @@ class Sistema {
     
     listarReservas() {
         if (this.reservas.length === 0) {
-            console.log("Nenhuma reserva cadastrada.");
+            console.log("\nNenhuma reserva cadastrada.");
             return [];
         }
         
@@ -184,10 +254,10 @@ class Sistema {
     }
 
     listarReservasCliente(idCliente) {
-        const reservasCliente = this.reservas.filter(r => r.idCliente === idCliente); // Filtro
+        const reservasCliente = this.reservas.filter(r => r.idCliente === idCliente);
         
         if (reservasCliente.length === 0) {
-            console.log("Você não possui nenhuma reserva cadastrada.");
+            console.log("\nVocê não possui nenhuma reserva cadastrada.");
         }
         
         return reservasCliente;

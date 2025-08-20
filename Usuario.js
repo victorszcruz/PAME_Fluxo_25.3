@@ -10,6 +10,21 @@ class Usuario {
     meusDados(){
         return `\n |ID: ${this.id}| \n |Nome: ${this.nome}| \n |CPF: ${this.cpf}| \n |Email: ${this.email}| \n`
     }
+
+    alterarDados(novoNome, novoCpf, novoEmail, novaSenha) {
+        if (novoNome) {
+            this.nome = novoNome;
+        }
+        if (novoCpf) {
+            this.cpf = novoCpf;
+        }
+        if (novoEmail) {
+            this.email = novoEmail;
+        }
+        if (novaSenha) {
+            this.senha = novaSenha;
+        }
+    }
 }
 
 module.exports = Usuario;
